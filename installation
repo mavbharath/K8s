@@ -1,0 +1,52 @@
+ 
+k8s installation 
+
+1) sudo apt update 
+	 sudo apt-get install -y apt-transport-https
+
+2) sudo su
+
+3) curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-get install -y apt-transport-https ca-certificates gnupg | echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list
+
+4) exit
+
+5) sudo apt update 
+	 sudo apt install -y docker.io 
+	 sudo systemctl start docker
+	 sudo systemctl enable docker.service  
+	 sudo apt-get install -y kubelet=1.25.5-00 kubeadm kubectl kubernetes-cni
+
+6) sudo su
+
+7) docker cgroup driver configuration need to be updated 
+			1. add the below content to the file /etc/docker/daemon.json
+				{
+
+				  "exec-opts": ["native.cgroupdriver=systemd"]
+				}
+
+8) 	systemctl daemon-reload 
+	systemctl restart docker 
+	systemctl restart kubectl
+
+9) Take ami from the above ec2 instances to create worker nodes 
+	   Open all the ports in security groups of master node (give type as Anywhere & port with source value ::/0 in Master node )
+
+10) kubeadm init 
+	if this command executes successfully then we get kubeadm join command with token
+	save this command in seperate file for worker nodes to add to this master.
+
+11) exit 
+
+12) mkdir -p $HOME/.kube | sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config | sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+13) sudo sysctl net.bridge.bridge-nf-call-iptables=1 | kubectl apply -f "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+
+14) login to worker nodes 
+	sudo su
+	systemctl daemon-reload | systemctl restart docker | systemctl restart kubectl
+
+15) Run the kubeadm join <TOKEN> command which we get from kubeadm init from master 
+
+16) In master node check for the worker nodes.
+		kubectl get nodes
